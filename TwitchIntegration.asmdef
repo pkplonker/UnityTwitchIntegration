@@ -1,0 +1,16 @@
+{
+    "name": "TwitchIntegration",
+    "rootNamespace": "",
+    "references": [
+        "GUID:815f81d9df028bb45a01c275e91770f4"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}
