@@ -20,17 +20,20 @@ namespace TwitchIntegration
 		[SerializeField] private string channelName;
 		[SerializeField] private string URL => "irc.chat.twitch.tv";
 		[SerializeField] private float pingFrequency = 30f;
-		public static event Action<string, string> OnMessageReceived;
+		public static event Action<string> OnMessageReceived;
+		public static event Action<ConnectionState> OnConnectionStatusChange;
 
 		public static event Action OnConnectionConfirmed;
-		
-		[SerializeField] private bool extendedCapabiltiies = false;
+
+		private ConnectionState connectionState = ConnectionState.Disconnected;
 		private TcpClient twitchClient;
 		private StreamReader reader;
 		private StreamWriter writer;
 		private float pingCounter;
 		private float lastPingTime;
 		private bool awaitingPong;
+		private bool firstResponse = false;
+		private bool extendedAck;
 
 		private void Start()
 		{
@@ -40,6 +43,9 @@ namespace TwitchIntegration
 
 		public void Connect()
 		{
+			firstResponse = false;
+			ChangeConnectionState(ConnectionState.Connecting);
+
 			twitchClient = new TcpClient(URL, 6667);
 			reader = new StreamReader(twitchClient.GetStream());
 			writer = new StreamWriter(twitchClient.GetStream());
@@ -48,21 +54,26 @@ namespace TwitchIntegration
 			writer.WriteLine("USER " + username + " 8 *:" + username);
 			writer.WriteLine("JOIN #" + channelName);
 			writer.Flush();
-			if (twitchClient.Connected)
-			{
-				Debug.Log("connected".WithColor(Color.green));
-			}
-
-			if (extendedCapabiltiies) RequestCapabilities();
+			if (!twitchClient.Connected) return;
+			Debug.Log("connected".WithColor(Color.green));
+			ChangeConnectionState(ConnectionState.Connected);
+			RequestCapabilities();
 		}
 
-		private void RequestCapabilities() => WriteToTwitch("CAP REQ :twitch.tv/tags twitch.tv/commands");
+		private void RequestCapabilities()=>WriteToTwitch("CAP REQ :twitch.tv/membership twitch.tv/tags twitch.tv/commands");
+		
 
+		private void ChangeConnectionState(ConnectionState state)
+		{
+			connectionState = state;
+			OnConnectionStatusChange?.Invoke(connectionState);
+		}
 
 		private void Update()
 		{
 			if (!twitchClient.Connected)
 			{
+				ChangeConnectionState(ConnectionState.Disconnected);
 				Connect();
 			}
 
@@ -74,22 +85,27 @@ namespace TwitchIntegration
 				lastPingTime = Time.time;
 				pingCounter = 0;
 				awaitingPong = true;
-				Debug.Log("Pinging".WithColor(Color.cyan));
+				Debug.Log("Pinging");
 			}
 
 			if (awaitingPong && Time.time - lastPingTime > 10f)
 			{
 				Debug.Log("Pong not received - restarting connection".WithColor(Color.red));
+				ChangeConnectionState(ConnectionState.ConnectionLost);
 				Connect();
 			}
 
 //debug
 			if (Input.GetKeyDown(KeyCode.A))
 			{
-				var message = "PRIVMSG #" + channelName + " :This is a sample message @" + Time.time;
+				var message = "PRIVMSG #" + channelName + " :This is a sample message " + Time.time;
 				Debug.Log("Attempting to write message: " + message);
 				WriteToTwitch(message);
 			}
+
+			//if (firstResponse && !extendedAck) RequestCapabilities();
+
+
 //debug
 			ReadChat();
 		}
@@ -104,43 +120,42 @@ namespace TwitchIntegration
 		private void ReadChat()
 		{
 			if (twitchClient.Available <= 0) return;
+			firstResponse = true;
+			ChangeConnectionState(ConnectionState.ConnectionConfirmed);
 			var message = reader.ReadLine();
-			//Debug.Log("Message received = " + message);
-			if (message.Contains("PRIVMSG"))
-			{
-				ParseMessage(message);
-				Debug.Log(message.WithColor(Color.green));
-			}
-			else if (message.Contains("Welcome, GLHF!"))
+			Debug.Log("Message received = " + message);
+			if (message.Contains("Welcome, GLHF!"))
 			{
 				Debug.Log("Connection confirmed".WithColor(Color.green));
+				ChangeConnectionState(ConnectionState.ConnectionConfirmed);
 				OnConnectionConfirmed?.Invoke();
 			}
 			else if (message.Contains(":tmi.twitch.tv PONG"))
 			{
-				Debug.Log("Connection ponged".WithColor(Color.green));
 				awaitingPong = false;
 			}
+			else if (message.Contains(":tmi.twitch.tv CAP * ACK :twitch.tv/tags twitch.tv/commands"))
+				extendedAck = true;
+			else if (message.Contains("PING :tmi.twitch.tv"))
+			{
+				var s = message;
+				Debug.Log("Received PING, Sending PONG");
+
+				s.Replace("PING", "PONG");
+				WriteToTwitch(s);
+			}
+
+			OnMessageReceived?.Invoke(message);
 		}
-
-		private void ParseMessage(string data)
-		{
-			if (!data.Contains("PRIVMSG")) return;
-			var messageSender = "";
-			var message = "";
-			//message
-			var colonIndex = data.IndexOf(':',2);
-			message = data.Substring(colonIndex + 1);
-			Debug.Log("Message is " + message.WithColor(Color.yellow));
-
-			var atIndex = data.IndexOf('@');
-			var dotIndex = data.IndexOf('.', atIndex);
-			messageSender = data.Substring(atIndex+1, dotIndex - atIndex - 1);
-			
-			Debug.Log("username is " + messageSender.WithColor(Color.magenta));
+	}
 
 
-			OnMessageReceived?.Invoke(messageSender, message);
-		}
+	public enum ConnectionState
+	{
+		Disconnected,
+		Connected,
+		ConnectionConfirmed,
+		ConnectionLost,
+		Connecting
 	}
 }
