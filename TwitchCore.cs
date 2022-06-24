@@ -32,8 +32,7 @@ namespace TwitchIntegration
 		private float pingCounter;
 		private float lastPingTime;
 		private bool awaitingPong;
-		private bool firstResponse = false;
-		private bool extendedAck;
+
 
 		private void Start()
 		{
@@ -43,9 +42,7 @@ namespace TwitchIntegration
 
 		public void Connect()
 		{
-			firstResponse = false;
 			ChangeConnectionState(ConnectionState.Connecting);
-
 			twitchClient = new TcpClient(URL, 6667);
 			reader = new StreamReader(twitchClient.GetStream());
 			writer = new StreamWriter(twitchClient.GetStream());
@@ -60,8 +57,9 @@ namespace TwitchIntegration
 			RequestCapabilities();
 		}
 
-		private void RequestCapabilities()=>WriteToTwitch("CAP REQ :twitch.tv/membership twitch.tv/tags twitch.tv/commands");
-		
+		private void RequestCapabilities() =>
+			WriteToTwitch("CAP REQ :twitch.tv/membership twitch.tv/tags twitch.tv/commands");
+
 
 		private void ChangeConnectionState(ConnectionState state)
 		{
@@ -95,18 +93,6 @@ namespace TwitchIntegration
 				Connect();
 			}
 
-//debug
-			if (Input.GetKeyDown(KeyCode.A))
-			{
-				var message = "PRIVMSG #" + channelName + " :This is a sample message " + Time.time;
-				Debug.Log("Attempting to write message: " + message);
-				WriteToTwitch(message);
-			}
-
-			//if (firstResponse && !extendedAck) RequestCapabilities();
-
-
-//debug
 			ReadChat();
 		}
 
@@ -117,10 +103,16 @@ namespace TwitchIntegration
 			writer.Flush();
 		}
 
+		public void PRIVMSGTToTwitch(string message)
+		{
+			message = message.Replace('@', '\r');
+			WriteToTwitch("PRIVMSG #" + channelName + " " + message);
+		}
+
+
 		private void ReadChat()
 		{
 			if (twitchClient.Available <= 0) return;
-			firstResponse = true;
 			ChangeConnectionState(ConnectionState.ConnectionConfirmed);
 			var message = reader.ReadLine();
 			message.ToLower();
@@ -136,13 +128,13 @@ namespace TwitchIntegration
 				awaitingPong = false;
 			}
 			else if (message.Contains(":tmi.twitch.tv CAP * ACK :twitch.tv/tags twitch.tv/commands"))
-				extendedAck = true;
+			{
+			}
 			else if (message.Contains("PING :tmi.twitch.tv"))
 			{
 				var s = message;
 				Debug.Log("Received PING, Sending PONG");
-
-				s.Replace("PING", "PONG");
+				s = s.Replace("PING", "PONG");
 				WriteToTwitch(s);
 			}
 
