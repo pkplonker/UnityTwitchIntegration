@@ -70,15 +70,32 @@ public class IRCParser : MonoBehaviour
 	{
 		var messageSender = "";
 		var message = "";
-		var fPos = data.IndexOf("display-name=") + 13;
-		var lPos = data.IndexOf(';', fPos);
-		if(lPos - fPos<0) Debug.LogError("length cannot be less than zero. Data:" +data+ ". lpos= " +lPos+". fpos= " +fPos);
-		messageSender = data.Substring(fPos,
-			lPos - fPos);
-		fPos = data.IndexOf(':', data.IndexOf("PRIVMSG"));
-		message = data.Substring(fPos + 1);
+		int fPos;
+		messageSender = GetSender(data);
+		message = GetMessage(data);
 		Debug.Log("username is: " + messageSender.WithColor(Color.magenta) + " message is: " +
 		          message.WithColor(Color.yellow));
-		OnPRIVMSG?.Invoke(messageSender, messageSender);
+		OnPRIVMSG?.Invoke(messageSender, message);
+	}
+
+	private static string GetMessage(string data)
+	{
+		int fPos;
+		string message;
+		fPos = data.IndexOf(':', data.IndexOf("PRIVMSG"));
+		message = data.Substring(fPos + 1);
+		return message;
+	}
+
+	private static string GetSender(string data)
+	{
+		string messageSender;
+		var fPos = data.IndexOf("display-name=") + 13;
+		var lPos = data.IndexOf(';', fPos);
+		if (lPos - fPos < 0)
+			Debug.LogError("length cannot be less than zero. Data:" + data + ". lpos= " + lPos + ". fpos= " + fPos);
+		messageSender = data.Substring(fPos,
+			lPos - fPos);
+		return messageSender;
 	}
 }

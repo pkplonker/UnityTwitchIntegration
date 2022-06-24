@@ -123,6 +123,7 @@ namespace TwitchIntegration
 			firstResponse = true;
 			ChangeConnectionState(ConnectionState.ConnectionConfirmed);
 			var message = reader.ReadLine();
+			message.ToLower();
 			Debug.Log("Message received = " + message);
 			if (message.Contains("Welcome, GLHF!"))
 			{
