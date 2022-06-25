@@ -3,6 +3,7 @@
 //
 
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using StuartHeathTools;
 using TwitchIntegration;
@@ -63,14 +64,13 @@ public class IRCParser : MonoBehaviour
 		messageSender = data.Substring(fPos + 1,
 			lPos - fPos - 1);
 		OnActiveMemberChange?.Invoke(messageSender, isJoiner);
-		Debug.Log((isJoiner?"Joiner = ":"Leaver = ") + messageSender.WithColor(Color.yellow));
+		Debug.Log((isJoiner ? "Joiner = " : "Leaver = ") + messageSender.WithColor(Color.yellow));
 	}
 
 	private static void HandlePrivMessage(string data)
 	{
 		var messageSender = "";
 		var message = "";
-		int fPos;
 		messageSender = GetSender(data);
 		message = GetMessage(data);
 		Debug.Log("username is: " + messageSender.WithColor(Color.magenta) + " message is: " +
@@ -98,4 +98,20 @@ public class IRCParser : MonoBehaviour
 			lPos - fPos);
 		return messageSender;
 	}
+#if UNITY_EDITOR
+
+	public static void JoinTesters()
+	{
+		OnPRIVMSG?.Invoke("pkplonker", "!join");
+		OnPRIVMSG?.Invoke("pkplonkertest", "!join");
+	}
+
+	public static void FightTesters()
+	{
+		OnPRIVMSG?.Invoke("pkplonker", "!join");
+		OnPRIVMSG?.Invoke("pkplonkertest", "!join");
+		OnPRIVMSG?.Invoke("pkplonker", "!fight pkplonkertest");
+	}
+
+#endif
 }
