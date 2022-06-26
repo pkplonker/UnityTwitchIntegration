@@ -104,7 +104,7 @@ namespace TwitchIntegration
 
 		private void Update()
 		{
-			if (!twitchClient.Connected)
+			if (twitchClient==null || !twitchClient.Connected)
 			{
 				ChangeConnectionState(ConnectionState.Disconnected);
 				AttemptConnection();
