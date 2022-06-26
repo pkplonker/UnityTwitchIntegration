@@ -17,6 +17,11 @@ public static class TwitchPasswordHandler
 
 	public static void Load()
 	{
+		if (!File.Exists(path))
+		{
+			Debug.Log("pass file not found");
+			return;
+		}
 		var json = File.ReadAllText(path);
 		var p = JsonUtility.FromJson<TwitchPass>(json);
 
