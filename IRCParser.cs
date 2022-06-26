@@ -98,18 +98,18 @@ namespace TwitchIntegration
 			return messageSender;
 		}
 #if UNITY_EDITOR
-		public static void JoinTesters()
+		public static void JoinTesters(string one, string two)
 		{
-			OnPRIVMSG?.Invoke("pkplonker", "!join");
-			OnPRIVMSG?.Invoke("pkplonkertest", "!join");
+			OnPRIVMSG?.Invoke(one, "!join");
+			OnPRIVMSG?.Invoke(two, "!join");
 		}
 
 
-		public static void FightTesters()
+		public static void FightTesters(string one, string two)
 		{
-			OnPRIVMSG?.Invoke("pkplonker", "!join");
-			OnPRIVMSG?.Invoke("pkplonkertest", "!join");
-			OnPRIVMSG?.Invoke("pkplonker", "!fight pkplonkertest");
+			OnPRIVMSG?.Invoke(one, "!join");
+			OnPRIVMSG?.Invoke(two, "!join");
+			OnPRIVMSG?.Invoke(one, "!fight "+ two);
 		}
 
 #endif

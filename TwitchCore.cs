@@ -61,7 +61,10 @@ namespace TwitchIntegration
 
 		private async Task Connect()
 		{
-			
+#if UNITY_EDITOR
+			Profiler.BeginSample("Connect");
+
+#endif
 
 			ChangeConnectionState(ConnectionState.Connecting);
 			twitchClient = new TcpClient(URL, 6667);
@@ -76,7 +79,11 @@ namespace TwitchIntegration
 			Debug.Log("connecting".WithColor(Color.yellow));
 			ChangeConnectionState(ConnectionState.Connecting);
 			RequestCapabilities();
+			awaitingPong = false;
 			connection = null;
+#if UNITY_EDITOR
+			Profiler.EndSample();
+#endif
 		}
 
 		private void RequestCapabilities() =>
@@ -105,16 +112,14 @@ namespace TwitchIntegration
 				lastPingTime = Time.time;
 				pingCounter = 0;
 				awaitingPong = true;
-				Debug.Log("Pinging");
+				//	Debug.Log("Pinging");
 			}
 
 			if (awaitingPong && Time.time - lastPingTime > 10f)
 			{
 				Debug.Log("Pong not received - restarting connection".WithColor(Color.red));
 				ChangeConnectionState(ConnectionState.ConnectionLost);
-				Profiler.BeginSample("Connect");
 				AttemptConnection();
-				Profiler.EndSample();
 			}
 
 			ReadChat();
@@ -123,6 +128,8 @@ namespace TwitchIntegration
 		private void WriteToTwitch(string message)
 		{
 			if (!twitchClient.Connected) AttemptConnection();
+			Debug.Log("Writing to twitch:- " + message);
+
 			writer.WriteLine(message);
 			writer.Flush();
 		}
@@ -130,7 +137,8 @@ namespace TwitchIntegration
 		public void PRIVMSGTToTwitch(string message)
 		{
 			message = message.Replace('@', '\r');
-			WriteToTwitch("PRIVMSG #" + channelName + " " + message);
+			var w = "PRIVMSG #" + channelName + " :" + message;
+			WriteToTwitch(w);
 		}
 
 
@@ -173,6 +181,5 @@ namespace TwitchIntegration
 		Connecting,
 		ConnectionConfirmed,
 		ConnectionLost,
-		
 	}
 }
