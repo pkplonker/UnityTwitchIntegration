@@ -18,7 +18,7 @@ namespace TwitchIntegration
 	public class TwitchCore : GenericUnitySingleton<TwitchCore>
 	{
 		[SerializeField] private string username;
-		[SerializeField] private string password;
+		[SerializeField] private string password = "twitchfighterbot";
 		[SerializeField] private string channelName;
 		[SerializeField] private string URL => "irc.chat.twitch.tv";
 		[SerializeField] private float pingFrequency = 30f;
@@ -38,10 +38,8 @@ namespace TwitchIntegration
 
 		private void Start()
 		{
-			username = PlayerPrefs.GetString("username");
-			password = PlayerPrefs.GetString("password");
+			password = TwitchPasswordHandler.GetPassword();
 			channelName = PlayerPrefs.GetString("channel");
-
 			twitchClient = new TcpClient();
 			AttemptConnection();
 			lastPingTime = 0;
@@ -67,6 +65,9 @@ namespace TwitchIntegration
 			Profiler.BeginSample("Connect");
 
 #endif
+			if (string.IsNullOrWhiteSpace(password) || string.IsNullOrWhiteSpace(username) ||
+			    string.IsNullOrWhiteSpace(channelName)) return;
+			Debug.Log("Starting connection ");
 
 			ChangeConnectionState(ConnectionState.Connecting);
 			twitchClient = new TcpClient(URL, 6667);
@@ -88,8 +89,11 @@ namespace TwitchIntegration
 #endif
 		}
 
-		private void RequestCapabilities() =>
+		private void RequestCapabilities()
+		{
 			WriteToTwitch("CAP REQ :twitch.tv/membership twitch.tv/tags twitch.tv/commands");
+
+		}
 
 
 		private void ChangeConnectionState(ConnectionState state)
@@ -129,7 +133,9 @@ namespace TwitchIntegration
 
 		private void WriteToTwitch(string message)
 		{
-			if (!twitchClient.Connected) AttemptConnection();
+			
+			if (connectionState == ConnectionState.Disconnected) AttemptConnection();
+			else if (connectionState != ConnectionState.ConnectionConfirmed) return;
 			Debug.Log("Writing to twitch:- " + message);
 
 			writer.WriteLine(message);
@@ -155,14 +161,17 @@ namespace TwitchIntegration
 			{
 				Debug.Log("Connected".WithColor(Color.green));
 				ChangeConnectionState(ConnectionState.ConnectionConfirmed);
+				RequestCapabilities();
+
 				OnConnectionConfirmed?.Invoke();
 			}
 			else if (message.Contains(":tmi.twitch.tv PONG"))
 			{
 				awaitingPong = false;
 			}
-			else if (message.Contains(":tmi.twitch.tv CAP * ACK :twitch.tv/tags twitch.tv/commands"))
+			else if (message.Contains(":tmi.twitch.tv CAP * ACK "))
 			{
+				Debug.Log("Extended acknowledged");
 			}
 			else if (message.Contains("PING :tmi.twitch.tv"))
 			{
