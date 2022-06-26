@@ -17,9 +17,10 @@ namespace TwitchIntegration
 	/// </summary>
 	public class TwitchCore : GenericUnitySingleton<TwitchCore>
 	{
-		[SerializeField] private string username;
-		[SerializeField] private string password = "twitchfighterbot";
-		[SerializeField] private string channelName;
+		private string username;
+		private string password;
+
+		private string channelName;
 		[SerializeField] private string URL => "irc.chat.twitch.tv";
 		[SerializeField] private float pingFrequency = 30f;
 		public static event Action<string> OnMessageReceived;
@@ -38,16 +39,21 @@ namespace TwitchIntegration
 
 		private void Start()
 		{
-			password = TwitchPasswordHandler.GetPassword();
 			channelName = PlayerPrefs.GetString("channel");
+			password = PlayerPrefs.GetString("password");
+			username = PlayerPrefs.GetString("username");
+
 			twitchClient = new TcpClient();
 			AttemptConnection();
 			lastPingTime = 0;
 		}
 
-		public void UpdateChannel(string c)
+
+		public void UpdateChannel(string channelText, string passwordText, string usernameText)
 		{
-			channelName = c;
+			channelName = channelText;
+			password = passwordText;
+			username = usernameText;
 			AttemptConnection();
 		}
 
@@ -92,7 +98,6 @@ namespace TwitchIntegration
 		private void RequestCapabilities()
 		{
 			WriteToTwitch("CAP REQ :twitch.tv/membership twitch.tv/tags twitch.tv/commands");
-
 		}
 
 
@@ -104,7 +109,7 @@ namespace TwitchIntegration
 
 		private void Update()
 		{
-			if (twitchClient==null || !twitchClient.Connected)
+			if (twitchClient == null || !twitchClient.Connected)
 			{
 				ChangeConnectionState(ConnectionState.Disconnected);
 				AttemptConnection();
@@ -133,7 +138,6 @@ namespace TwitchIntegration
 
 		private void WriteToTwitch(string message)
 		{
-			
 			if (connectionState == ConnectionState.Disconnected) AttemptConnection();
 			else if (connectionState != ConnectionState.ConnectionConfirmed) return;
 			Debug.Log("Writing to twitch:- " + message);
