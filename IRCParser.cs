@@ -109,7 +109,7 @@ namespace TwitchIntegration
 		{
 			OnPRIVMSG?.Invoke(one, "!join");
 			OnPRIVMSG?.Invoke(two, "!join");
-			OnPRIVMSG?.Invoke(one, "!fight "+ two);
+			OnPRIVMSG?.Invoke(one, "!fight " + two);
 		}
 
 #endif

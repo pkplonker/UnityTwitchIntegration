@@ -38,15 +38,17 @@ namespace TwitchIntegration
 
 		private void Start()
 		{
+			username = PlayerPrefs.GetString("username");
+			password = PlayerPrefs.GetString("password");
+			channelName = PlayerPrefs.GetString("channel");
+
 			twitchClient = new TcpClient();
 			AttemptConnection();
 			lastPingTime = 0;
 		}
 
-		public void UpdateLogin(string u, string p, string c)
+		public void UpdateChannel(string c)
 		{
-			username = u;
-			password = p;
 			channelName = c;
 			AttemptConnection();
 		}
