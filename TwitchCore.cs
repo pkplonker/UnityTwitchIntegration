@@ -5,6 +5,7 @@
 using System;
 using System.IO;
 using System.Net.Sockets;
+using System.Threading.Tasks;
 using UnityEngine;
 using StuartHeathTools;
 using UnityEngine.Profiling;
@@ -33,29 +34,49 @@ namespace TwitchIntegration
 		private float pingCounter;
 		private float lastPingTime;
 		private bool awaitingPong;
-
+		private Task connection;
 
 		private void Start()
 		{
-			Connect();
+			twitchClient = new TcpClient();
+			AttemptConnection();
 			lastPingTime = 0;
 		}
 
-		public void Connect()
+		public void UpdateLogin(string u, string p, string c)
 		{
+			username = u;
+			password = p;
+			channelName = c;
+			AttemptConnection();
+		}
+
+		public void AttemptConnection()
+		{
+			if (connection?.AsyncState == null)
+			{
+				connection = Connect();
+			}
+		}
+
+		private async Task Connect()
+		{
+			
+
 			ChangeConnectionState(ConnectionState.Connecting);
 			twitchClient = new TcpClient(URL, 6667);
 			reader = new StreamReader(twitchClient.GetStream());
 			writer = new StreamWriter(twitchClient.GetStream());
-			writer.WriteLine("PASS " + password);
-			writer.WriteLine("NICK " + username);
-			writer.WriteLine("USER " + username + " 8 *:" + username);
-			writer.WriteLine("JOIN #" + channelName);
-			writer.Flush();
+			await writer.WriteLineAsync("PASS " + password);
+			await writer.WriteLineAsync("NICK " + username);
+			await writer.WriteLineAsync("USER " + username + " 8 *:" + username);
+			await writer.WriteLineAsync("JOIN #" + channelName);
+			await writer.FlushAsync();
 			if (!twitchClient.Connected) return;
-			Debug.Log("connected".WithColor(Color.green));
-			ChangeConnectionState(ConnectionState.Connected);
+			Debug.Log("connecting".WithColor(Color.yellow));
+			ChangeConnectionState(ConnectionState.Connecting);
 			RequestCapabilities();
+			connection = null;
 		}
 
 		private void RequestCapabilities() =>
@@ -73,7 +94,7 @@ namespace TwitchIntegration
 			if (!twitchClient.Connected)
 			{
 				ChangeConnectionState(ConnectionState.Disconnected);
-				Connect();
+				AttemptConnection();
 			}
 
 			if (!twitchClient.Connected) return;
@@ -92,7 +113,7 @@ namespace TwitchIntegration
 				Debug.Log("Pong not received - restarting connection".WithColor(Color.red));
 				ChangeConnectionState(ConnectionState.ConnectionLost);
 				Profiler.BeginSample("Connect");
-				Connect();
+				AttemptConnection();
 				Profiler.EndSample();
 			}
 
@@ -101,7 +122,7 @@ namespace TwitchIntegration
 
 		private void WriteToTwitch(string message)
 		{
-			if (!twitchClient.Connected) Connect();
+			if (!twitchClient.Connected) AttemptConnection();
 			writer.WriteLine(message);
 			writer.Flush();
 		}
@@ -119,10 +140,10 @@ namespace TwitchIntegration
 			ChangeConnectionState(ConnectionState.ConnectionConfirmed);
 			var message = reader.ReadLine();
 			message.ToLower();
-//			Debug.Log("Message received = " + message);
+			Debug.Log("Message received = " + message);
 			if (message.Contains("Welcome, GLHF!"))
 			{
-				Debug.Log("Connection confirmed".WithColor(Color.green));
+				Debug.Log("Connected".WithColor(Color.green));
 				ChangeConnectionState(ConnectionState.ConnectionConfirmed);
 				OnConnectionConfirmed?.Invoke();
 			}
@@ -149,9 +170,9 @@ namespace TwitchIntegration
 	public enum ConnectionState
 	{
 		Disconnected,
-		Connected,
+		Connecting,
 		ConnectionConfirmed,
 		ConnectionLost,
-		Connecting
+		
 	}
 }
