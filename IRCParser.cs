@@ -40,6 +40,7 @@ namespace TwitchIntegration
 				ParseExistingMemberList(data);
 			}
 		}
+		
 
 		private void ParseExistingMemberList(string data)
 		{
