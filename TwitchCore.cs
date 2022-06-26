@@ -7,6 +7,7 @@ using System.IO;
 using System.Net.Sockets;
 using UnityEngine;
 using StuartHeathTools;
+using UnityEngine.Profiling;
 
 namespace TwitchIntegration
 {
@@ -90,7 +91,9 @@ namespace TwitchIntegration
 			{
 				Debug.Log("Pong not received - restarting connection".WithColor(Color.red));
 				ChangeConnectionState(ConnectionState.ConnectionLost);
+				Profiler.BeginSample("Connect");
 				Connect();
+				Profiler.EndSample();
 			}
 
 			ReadChat();
@@ -116,7 +119,7 @@ namespace TwitchIntegration
 			ChangeConnectionState(ConnectionState.ConnectionConfirmed);
 			var message = reader.ReadLine();
 			message.ToLower();
-			Debug.Log("Message received = " + message);
+//			Debug.Log("Message received = " + message);
 			if (message.Contains("Welcome, GLHF!"))
 			{
 				Debug.Log("Connection confirmed".WithColor(Color.green));
