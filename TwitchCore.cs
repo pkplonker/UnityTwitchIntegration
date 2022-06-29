@@ -166,11 +166,9 @@ namespace TwitchIntegration
 			else if (message.Contains("PING :tmi.twitch.tv"))
 			{
 				var s = message;
-				Debug.Log("Received PING, Sending PONG");
 				s = s.Replace("PING", "PONG");
 				WriteToTwitch(s);
 			}
-
 			OnMessageReceived?.Invoke(message);
 		}
 	}
