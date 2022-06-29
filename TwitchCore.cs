@@ -68,7 +68,6 @@ namespace TwitchIntegration
 #endif
 			if (string.IsNullOrWhiteSpace(password) || string.IsNullOrWhiteSpace(username) ||
 			    string.IsNullOrWhiteSpace(channelName)) return;
-			Debug.Log("Starting connection ");
 			ChangeConnectionState(ConnectionState.Connecting);
 			twitchClient = new TcpClient(URL, 6667);
 			reader = new StreamReader(twitchClient.GetStream());
@@ -79,7 +78,6 @@ namespace TwitchIntegration
 			await writer.WriteLineAsync("JOIN #" + channelName);
 			await writer.FlushAsync();
 			if (!twitchClient.Connected) return;
-			Debug.Log("connecting".WithColor(Color.yellow));
 			ChangeConnectionState(ConnectionState.Connecting);
 			RequestCapabilities();
 			awaitingPong = false;
