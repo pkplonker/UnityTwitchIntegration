@@ -19,9 +19,8 @@ namespace TwitchIntegration
 	{
 		private string username;
 		private string password;
-
 		private string channelName;
-		[SerializeField] private string URL => "irc.chat.twitch.tv";
+		 private readonly string URL = "irc.chat.twitch.tv";
 		[SerializeField] private float pingFrequency = 30f;
 		public static event Action<string> OnMessageReceived;
 		public static event Action<ConnectionState> OnConnectionStatusChange;
@@ -42,7 +41,6 @@ namespace TwitchIntegration
 			channelName = PlayerPrefs.GetString("channel");
 			password = PlayerPrefs.GetString("password");
 			username = PlayerPrefs.GetString("username");
-
 			twitchClient = new TcpClient();
 			AttemptConnection();
 			lastPingTime = 0;
@@ -59,10 +57,7 @@ namespace TwitchIntegration
 
 		public void AttemptConnection()
 		{
-			if (connection?.AsyncState == null)
-			{
-				connection = Connect();
-			}
+			if (connection?.AsyncState == null) connection = Connect();
 		}
 
 		private async Task Connect()
@@ -74,7 +69,6 @@ namespace TwitchIntegration
 			if (string.IsNullOrWhiteSpace(password) || string.IsNullOrWhiteSpace(username) ||
 			    string.IsNullOrWhiteSpace(channelName)) return;
 			Debug.Log("Starting connection ");
-
 			ChangeConnectionState(ConnectionState.Connecting);
 			twitchClient = new TcpClient(URL, 6667);
 			reader = new StreamReader(twitchClient.GetStream());
@@ -95,10 +89,8 @@ namespace TwitchIntegration
 #endif
 		}
 
-		private void RequestCapabilities()
-		{
+		private void RequestCapabilities() =>
 			WriteToTwitch("CAP REQ :twitch.tv/membership twitch.tv/tags twitch.tv/commands");
-		}
 
 
 		private void ChangeConnectionState(ConnectionState state)
@@ -128,7 +120,7 @@ namespace TwitchIntegration
 
 			if (awaitingPong && Time.time - lastPingTime > 10f)
 			{
-				Debug.Log("Pong not received - restarting connection".WithColor(Color.red));
+				//Debug.Log("Pong not received - restarting connection".WithColor(Color.red));
 				ChangeConnectionState(ConnectionState.ConnectionLost);
 				AttemptConnection();
 			}
@@ -140,7 +132,7 @@ namespace TwitchIntegration
 		{
 			if (connectionState == ConnectionState.Disconnected) AttemptConnection();
 			else if (connectionState != ConnectionState.ConnectionConfirmed) return;
-			Debug.Log("Writing to twitch:- " + message);
+			//Debug.Log("Writing to twitch:- " + message);
 
 			writer.WriteLine(message);
 			writer.Flush();
@@ -160,7 +152,7 @@ namespace TwitchIntegration
 			ChangeConnectionState(ConnectionState.ConnectionConfirmed);
 			var message = reader.ReadLine();
 			message.ToLower();
-			Debug.Log("Message received = " + message);
+			//Debug.Log("Message received = " + message);
 			if (message.Contains("Welcome, GLHF!"))
 			{
 				Debug.Log("Connected".WithColor(Color.green));
@@ -169,13 +161,9 @@ namespace TwitchIntegration
 
 				OnConnectionConfirmed?.Invoke();
 			}
-			else if (message.Contains(":tmi.twitch.tv PONG"))
-			{
-				awaitingPong = false;
-			}
+			else if (message.Contains(":tmi.twitch.tv PONG")) awaitingPong = false;
 			else if (message.Contains(":tmi.twitch.tv CAP * ACK "))
 			{
-				Debug.Log("Extended acknowledged");
 			}
 			else if (message.Contains("PING :tmi.twitch.tv"))
 			{
