@@ -73,7 +73,7 @@ namespace TwitchIntegration
 				Debug.LogError("length cannot be less than zero. Data:" + data + ". lpos= " + lPos + ". fpos= " + fPos);
 			var messageSender = data.Substring(fPos,
 				lPos - fPos);
-			return messageSender;
+			return messageSender.ToLower();
 		}
 #if UNITY_EDITOR
 		public static void JoinTesters(string one, string two)
@@ -92,7 +92,7 @@ namespace TwitchIntegration
 		public static void JoinTestersMass()
 		{
 
-			for (int i = 0; i < 20; i++)
+			for (int i = 0; i < 55; i++)
 			{
 				OnPRIVMSG?.Invoke(i.ToString(), "!join");
 			}
