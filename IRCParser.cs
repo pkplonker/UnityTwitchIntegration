@@ -22,16 +22,18 @@ namespace TwitchIntegration
 
 		private void ParseMessage(string data)
 		{
-			if (data.Contains("PRIVMSG")) HandlePrivMessage(data);
-			else if (data.Contains("JOIN #")) HandleUserConnection(data, true);
-			else if (data.Contains("PART #")) HandleUserConnection(data, false);
-			else if (data.Contains("tmi.twitch.tv 353")) ParseExistingMemberList(data);
+			//Debug.Log("Data received: "+data);
+			data = data.ToLower();
+			if (data.Contains("PRIVMSG".ToLower())) HandlePrivMessage(data);
+			else if (data.Contains("JOIN #".ToLower())) HandleUserConnection(data, true);
+			else if (data.Contains("PART #".ToLower())) HandleUserConnection(data, false);
+			else if (data.Contains("tmi.twitch.tv 353".ToLower())) ParseExistingMemberList(data);
 		}
 
 
 		private void ParseExistingMemberList(string data)
 		{
-			var fpos = data.IndexOf("353");
+			var fpos = data.IndexOf("353".ToLower());
 			if (fpos == -1) return;
 			var startPos = data.IndexOf(':', fpos);
 			var userNames = data.Substring(startPos + 1).Split(' ');
@@ -55,19 +57,19 @@ namespace TwitchIntegration
 			var message = "";
 			messageSender = GetSender(data);
 			message = GetMessage(data);
-			OnPRIVMSG?.Invoke(messageSender, message);
+			OnPRIVMSG?.Invoke(messageSender.ToLower(), message.ToLower());
 		}
 
 		private static string GetMessage(string data)
 		{
-			var fPos = data.IndexOf(':', data.IndexOf("PRIVMSG"));
+			var fPos = data.IndexOf(':', data.IndexOf("PRIVMSG".ToLower()));
 			var message = data.Substring(fPos + 1);
 			return message;
 		}
 
 		private static string GetSender(string data)
 		{
-			var fPos = data.IndexOf("display-name=") + 13;
+			var fPos = data.IndexOf("display-name=".ToLower()) + 13;
 			var lPos = data.IndexOf(';', fPos);
 			if (lPos - fPos < 0)
 				Debug.LogError("length cannot be less than zero. Data:" + data + ". lpos= " + lPos + ". fpos= " + fPos);
