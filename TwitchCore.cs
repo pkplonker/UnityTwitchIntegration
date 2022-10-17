@@ -105,7 +105,7 @@ namespace TwitchIntegration
 				AttemptConnection();
 			}
 
-			if (!twitchClient.Connected) return;
+			if (twitchClient==null || !twitchClient.Connected) return;
 			pingCounter += Time.deltaTime;
 			if (pingCounter > pingFrequency)
 			{
@@ -131,6 +131,12 @@ namespace TwitchIntegration
 			if (connectionState == ConnectionState.Disconnected) AttemptConnection();
 			else if (connectionState != ConnectionState.ConnectionConfirmed) return;
 			//Debug.Log("Writing to twitch:- " + message);
+			if (writer == null)
+			{
+				Debug.Log("Failed to write to twitch".WithColor(Color.red));
+				throw new Exception("Failed to write to twitch - writer is null");
+			}
+			if (writer == null) return;
 
 			writer.WriteLine(message);
 			writer.Flush();
