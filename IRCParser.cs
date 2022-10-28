@@ -22,10 +22,13 @@ namespace TwitchIntegration
 
 		private void ParseMessage(string data)
 		{
-			//Debug.Log("Data received: "+data);
+			Debug.Log("Data received: "+data);
 			data = data.ToLower();
-			if (data.Contains("PRIVMSG".ToLower())) HandlePrivMessage(data);
-			else if (data.Contains("JOIN #".ToLower())) HandleUserConnection(data, true);
+			if (data.Contains("PRIVMSG".ToLower()))
+			{
+				HandleUserConnection(data, true);
+				HandlePrivMessage(data);
+			}
 			else if (data.Contains("PART #".ToLower())) HandleUserConnection(data, false);
 			else if (data.Contains("tmi.twitch.tv 353".ToLower())) ParseExistingMemberList(data);
 		}
